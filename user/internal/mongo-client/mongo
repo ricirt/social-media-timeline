@@ -1,6 +1,0 @@
-package mongoClient
-
-func NewMongoClient() {
-	fmt.Println("adsas")
-
-}
