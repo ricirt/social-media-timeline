@@ -1,4 +1,4 @@
-package mongoClient
+package mongodb
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 var client *mongo.Client
 
 func InitMongoClient(uri string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var err error
