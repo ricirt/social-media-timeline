@@ -4,21 +4,23 @@ import (
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// User represents a user in the database
+// User struct'ı: MongoDB'de tutulacak kullanıcı modeli
 type User struct {
-	ID    string `bson:"_id,omitempty"`
-	Name  string `bson:"name"`
-	Email string `bson:"email"`
+	ID    primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Name  string             `bson:"name" json:"name"`
+	Email string             `bson:"email" json:"email"`
 }
 
 // UserRepository defines the interface for user repository
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *User) error
 	GetUserByID(ctx context.Context, id string) (*User, error)
-	UpdateUser(ctx context.Context, user *User) error
+	GetUsers(ctx context.Context) ([]User, error)
+	UpdateUser(ctx context.Context, id string, user *User) error
 	DeleteUser(ctx context.Context, id string) error
 }
 
@@ -48,8 +50,13 @@ func (r *MongoUserRepository) GetUserByID(ctx context.Context, id string) (*User
 	return &user, err
 }
 
+// GetUserByID retrieves a user by ID
+func (r *MongoUserRepository) GetUsers(ctx context.Context) ([]User, error) {
+	return nil, nil
+}
+
 // UpdateUser updates an existing user
-func (r *MongoUserRepository) UpdateUser(ctx context.Context, user *User) error {
+func (r *MongoUserRepository) UpdateUser(ctx context.Context, id string, user *User) error {
 	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": user.ID}, bson.M{"$set": user})
 	return err
 }

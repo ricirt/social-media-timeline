@@ -1,9 +1,10 @@
 package handler
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+	"github.com/ricirt/social-media-timeline/user/internal/repository"
 )
 
 // UserHandler interface'i CRUD metotlarını tanımlar
@@ -15,81 +16,83 @@ type UserHandler interface {
 	DeleteUser(c *gin.Context)
 }
 
-// User struct'ı
-type User struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-}
-
-// Mock kullanıcı verisi
-var users = []User{
-	{ID: "1", Name: "John Doe", Email: "john@example.com"},
-	{ID: "2", Name: "Jane Smith", Email: "jane@example.com"},
-}
-
 // userHandler yapısı
-type userHandler struct{}
+type userHandler struct {
+	repo *repository.MongoUserRepository
+}
 
 // NewUserHandler, userHandler'ın bir örneğini döner
-func NewUserHandler() UserHandler {
-	return &userHandler{}
+func NewUserHandler(repo *repository.MongoUserRepository) UserHandler {
+	return &userHandler{
+		repo: repo,
+	}
 }
 
 // GetUsers tüm kullanıcıları döndürür
 func (h *userHandler) GetUsers(c *gin.Context) {
+
+	users, err := h.repo.GetUsers(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, users)
 }
 
 // GetUserByID, ID'ye göre bir kullanıcı döner
 func (h *userHandler) GetUserByID(c *gin.Context) {
 	id := c.Param("id")
-	for _, user := range users {
-		if user.ID == id {
-			c.JSON(http.StatusOK, user)
-			return
-		}
+	user, err := h.repo.GetUserByID(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+
+		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+	c.JSON(http.StatusOK, user)
+	return
 }
 
 // CreateUser yeni bir kullanıcı oluşturur
 func (h *userHandler) CreateUser(c *gin.Context) {
-	var newUser User
+	var newUser repository.User
 
 	if err := c.BindJSON(&newUser); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	users = append(users, newUser)
-	c.JSON(http.StatusCreated, newUser)
+	err := h.repo.CreateUser(c, &newUser)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, nil)
 }
 
 // UpdateUser, mevcut kullanıcıyı günceller
 func (h *userHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
-	var updatedUser User
+	var updatedUser repository.User
 
 	if err := c.BindJSON(&updatedUser); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	for i, user := range users {
-		if user.ID == id {
-			users[i] = updatedUser
-			c.JSON(http.StatusOK, updatedUser)
-			return
-		}
+	if err := h.repo.UpdateUser(c, id, &updatedUser); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
 }
 
-// DeleteUser, kullanıcıyı siler
+// DeleteUser implements UserHandler
 func (h *userHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
-	for i, user := range users {
-		if user.ID == id {
-			users = append(users[:i], users[i+1:]...)
-			c.JSON(http.StatusOK, gin.H
+	if err := h.repo.DeleteUser(c, id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, nil)
+}
