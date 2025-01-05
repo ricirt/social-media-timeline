@@ -25,11 +25,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mongoUserRepository := mongo.NewMongoUserRepository(
+	mongoUserRepository, err := mongo.NewMongoUserRepository(
 		mongoClient,
 		config.MongoDB.Database,
 		config.MongoDB.Collections.Users,
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	h := handler.NewUserHandler(mongoUserRepository)
 	r := gin.Default()

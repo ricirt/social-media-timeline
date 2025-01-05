@@ -1,40 +1,29 @@
 FROM golang:1.21-alpine AS builder
 
-# Debug için gerekli araçları yükle
-RUN apk add --no-cache git gcc libc-dev
+# Install build essentials
+RUN apk add --no-cache git build-base
 
-# Build aşaması için /app dizini
-WORKDIR /app
+WORKDIR /build
 
-# Delve debugger'ı yükle
-RUN go install github.com/go-delve/delve/cmd/dlv@latest
-
-# Önce go.mod ve go.sum dosyalarını kopyala
+# Copy only go.mod and go.sum first to leverage Docker cache
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Kaynak kodları kopyala
+# Copy only the necessary source code
 COPY user/ ./user/
 
-# Debug sembolleriyle birlikte build et
-RUN CGO_ENABLED=0 go build -gcflags="all=-N -l" -o main ./user/cmd/user/main.go
+# Build the application
+RUN cd user && CGO_ENABLED=0 GOOS=linux go build -o main cmd/user/main.go
 
-# Yeni aşama - çalışma zamanı
+# Final stage
 FROM alpine:latest
-
-# Debug için gerekli araçları yükle
-RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Builder aşamasından gerekli dosyaları kopyala
-COPY --from=builder /app/main .
-COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
+# Copy the binary and config from builder
+COPY --from=builder /build/user/main ./
+COPY user/config/appSettings.json ./config/
 
-# Config dizinini oluştur
-RUN mkdir -p /app/config
+EXPOSE 8080
 
-EXPOSE 8080 40000
-
-# Debug modunda başlat
-CMD ["dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "./main"]
+CMD ["./main"]
