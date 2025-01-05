@@ -6,8 +6,8 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/user/cmd/user/main.go",
-            "cwd": "${workspaceFolder}/user",
+            "program": "${workspaceFolder}/services/user/cmd/main.go",
+            "cwd": "${workspaceFolder}/services/user",
             "env": {
                 "CGO_ENABLED": "1"
             },

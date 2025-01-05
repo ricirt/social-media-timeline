@@ -4,10 +4,10 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ricirt/social-media-timeline/user/internal/handler"
-	"github.com/ricirt/social-media-timeline/user/internal/repository/mongo"
-	"github.com/ricirt/social-media-timeline/user/pkg/config"
-	mongodb "github.com/ricirt/social-media-timeline/user/pkg/mongo-db"
+	"github.com/ricirt/social-media-timeline/services/user/internal/handler"
+	"github.com/ricirt/social-media-timeline/services/user/internal/repository/mongo"
+	"github.com/ricirt/social-media-timeline/services/user/pkg/config"
+	mongodb "github.com/ricirt/social-media-timeline/services/user/pkg/mongo-db"
 )
 
 func main() {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ricirt/social-media-timeline/user/internal/model"
-	pkgErrors "github.com/ricirt/social-media-timeline/user/pkg/errors"
+	"github.com/ricirt/social-media-timeline/services/user/internal/model"
+	pkgErrors "github.com/ricirt/social-media-timeline/services/user/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

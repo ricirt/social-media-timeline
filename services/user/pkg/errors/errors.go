@@ -12,9 +12,10 @@ var (
 
 // Database operation errors
 var (
-	ErrDuplicateEmail = errors.New("user with this email already exists")
-	ErrDBConnection   = errors.New("database connection error")
-	ErrDBOperation    = errors.New("database operation failed")
+	ErrDuplicateEmail      = errors.New("user with this email already exists")
+	ErrDBConnection        = errors.New("database connection error")
+	ErrDBOperation         = errors.New("database operation failed")
+	ErrUnsupportedDatabase = errors.New("unsupported database type")
 )
 
 // Validation errors

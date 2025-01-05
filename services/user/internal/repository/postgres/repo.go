@@ -4,18 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 
-	"github.com/ricirt/social-media-timeline/user/internal/model"
-	pkgErrors "github.com/ricirt/social-media-timeline/user/pkg/errors"
+	"github.com/ricirt/social-media-timeline/services/user/internal/model"
+	pkgErrors "github.com/ricirt/social-media-timeline/services/user/pkg/errors"
 )
 
 // UserRepository defines the interface for user repository operations
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *model.User) error
-	GetUserByID(ctx context.Context, id int) (*model.User, error)
+	GetUserByID(ctx context.Context, id string) (*model.User, error)
 	GetUsers(ctx context.Context) ([]model.User, error)
-	UpdateUser(ctx context.Context, id int, user *model.User) error
-	DeleteUser(ctx context.Context, id int) error
+	UpdateUser(ctx context.Context, id string, user *model.User) error
+	DeleteUser(ctx context.Context, id string) error
 }
 
 // PostgresUserRepository implements UserRepository interface using PostgreSQL
@@ -50,18 +51,23 @@ func (r *PostgresUserRepository) CreateUser(ctx context.Context, user *model.Use
 }
 
 // GetUserByID retrieves a user by ID
-func (r *PostgresUserRepository) GetUserByID(ctx context.Context, id int) (*model.User, error) {
+func (r *PostgresUserRepository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid id: %w", err)
+	}
+
 	user := &model.User{}
 	query := `
 		SELECT id, name, email
 		FROM users
 		WHERE id = $1`
 
-	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Name, &user.Email)
+	err = r.db.QueryRowContext(ctx, query, idInt).Scan(&user.ID, &user.Name, &user.Email)
+	if err == sql.ErrNoRows {
+		return nil, pkgErrors.ErrUserNotFound
+	}
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, pkgErrors.ErrUserNotFound
-		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
@@ -85,7 +91,7 @@ func (r *PostgresUserRepository) GetUsers(ctx context.Context) ([]model.User, er
 	for rows.Next() {
 		var user model.User
 		if err := rows.Scan(&user.ID, &user.Name, &user.Email); err != nil {
-			return nil, fmt.Errorf("failed to read user data: %w", err)
+			return nil, fmt.Errorf("failed to scan user: %w", err)
 		}
 		users = append(users, user)
 	}
@@ -98,20 +104,25 @@ func (r *PostgresUserRepository) GetUsers(ctx context.Context) ([]model.User, er
 }
 
 // UpdateUser updates an existing user
-func (r *PostgresUserRepository) UpdateUser(ctx context.Context, id int, user *model.User) error {
+func (r *PostgresUserRepository) UpdateUser(ctx context.Context, id string, user *model.User) error {
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return fmt.Errorf("invalid id: %w", err)
+	}
+
 	query := `
 		UPDATE users
 		SET name = $1, email = $2
 		WHERE id = $3`
 
-	result, err := r.db.ExecContext(ctx, query, user.Name, user.Email, id)
+	result, err := r.db.ExecContext(ctx, query, user.Name, user.Email, idInt)
 	if err != nil {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to count affected rows: %w", err)
+		return fmt.Errorf("failed to get affected rows: %w", err)
 	}
 
 	if rowsAffected == 0 {
@@ -122,19 +133,24 @@ func (r *PostgresUserRepository) UpdateUser(ctx context.Context, id int, user *m
 }
 
 // DeleteUser removes a user
-func (r *PostgresUserRepository) DeleteUser(ctx context.Context, id int) error {
+func (r *PostgresUserRepository) DeleteUser(ctx context.Context, id string) error {
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return fmt.Errorf("invalid id: %w", err)
+	}
+
 	query := `
 		DELETE FROM users
 		WHERE id = $1`
 
-	result, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.ExecContext(ctx, query, idInt)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to count affected rows: %w", err)
+		return fmt.Errorf("failed to get affected rows: %w", err)
 	}
 
 	if rowsAffected == 0 {

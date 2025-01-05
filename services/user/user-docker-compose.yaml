@@ -4,8 +4,8 @@ services:
   user_api:
     container_name: user_api
     build:
-      context: ..
-      dockerfile: user/Dockerfile
+      context: ../..
+      dockerfile: services/user/Dockerfile
     ports:
       - "8080:8080"
     volumes:

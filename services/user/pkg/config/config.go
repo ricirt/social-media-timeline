@@ -24,7 +24,13 @@ type Config struct {
 
 // LoadConfig loads configuration from file and environment variables
 func LoadConfig() (*Config, error) {
-	configPath := filepath.Join("/app", "config", "appSettings.json")
+	// Try current directory first
+	configPath := "config/appSettings.json"
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		// If not found, try parent directory
+		configPath = filepath.Join("..", "config", "appSettings.json")
+	}
+
 	file, err := os.Open(configPath)
 	if err != nil {
 		return nil, err
