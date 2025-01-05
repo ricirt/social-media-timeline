@@ -2,32 +2,53 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var client *mongo.Client
+var (
+	client *mongo.Client
+	once   sync.Once
+)
 
-func InitMongoClient(uri string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+// InitMongoClient initializes MongoDB connection
+func InitMongoClient(uri string) error {
+	var initErr error
+	once.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-	var err error
-	client, err = mongo.Connect(ctx, options.Client().ApplyURI(uri))
-	if err != nil {
-		log.Fatal(err)
-	}
+		clientOptions := options.Client().
+			ApplyURI(uri).
+			SetConnectTimeout(10 * time.Second).
+			SetServerSelectionTimeout(10 * time.Second)
 
-	if err := client.Ping(ctx, nil); err != nil {
-		log.Fatal("Failed to connect to MongoDB:", err)
-	}
+		client, initErr = mongo.Connect(ctx, clientOptions)
+		if initErr != nil {
+			initErr = fmt.Errorf("MongoDB connection failed: %v", initErr)
+			return
+		}
 
-	log.Println("Connected to MongoDB")
+		if err := client.Ping(ctx, nil); err != nil {
+			initErr = fmt.Errorf("MongoDB ping failed: %v", err)
+			return
+		}
+
+		log.Println("Successfully connected to MongoDB")
+	})
+
+	return initErr
 }
 
-func GetMongoClient() *mongo.Client {
-	return client
+// GetMongoClient returns MongoDB client instance
+func GetMongoClient() (*mongo.Client, error) {
+	if client == nil {
+		return nil, fmt.Errorf("MongoDB client is not initialized")
+	}
+	return client, nil
 }

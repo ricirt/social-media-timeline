@@ -1,0 +1,65 @@
+services:
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    restart: unless-stopped
+
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=timeline_db
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  user_api:
+    container_name: user_api
+    build:
+      context: ..
+      dockerfile: user/Dockerfile
+    security_opt:
+      - "apparmor=unconfined"
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - ./config:/app/config
+      - ../:/app/src
+    ports:
+      - 8080:8080
+      - 40000:40000
+    depends_on:
+      - mongodb
+      - postgres
+    environment:
+      - MONGODB_URI=mongodb://root:password@mongodb:27017/admin
+      - POSTGRES_URI=postgresql://postgres:postgres@postgres:5432/timeline_db
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  postgres_data:

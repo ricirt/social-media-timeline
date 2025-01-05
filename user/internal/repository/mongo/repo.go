@@ -1,4 +1,4 @@
-package repository
+package mongo
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// User struct'ı: MongoDB'de tutulacak kullanıcı modeli
+// User model stored in MongoDB
 type User struct {
 	ID    primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 	Name  string             `bson:"name" json:"name"`
@@ -50,9 +50,20 @@ func (r *MongoUserRepository) GetUserByID(ctx context.Context, id string) (*User
 	return &user, err
 }
 
-// GetUserByID retrieves a user by ID
+// GetUsers retrieves all users
 func (r *MongoUserRepository) GetUsers(ctx context.Context) ([]User, error) {
-	return nil, nil
+	cursor, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var users []User
+	if err := cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 // UpdateUser updates an existing user

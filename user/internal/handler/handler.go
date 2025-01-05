@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ricirt/social-media-timeline/user/internal/repository"
+	"github.com/ricirt/social-media-timeline/user/internal/repository/mongo"
 )
 
-// UserHandler interface'i CRUD metotlarını tanımlar
+// UserHandler defines CRUD methods
 type UserHandler interface {
 	GetUsers(c *gin.Context)
 	GetUserByID(c *gin.Context)
@@ -16,21 +16,20 @@ type UserHandler interface {
 	DeleteUser(c *gin.Context)
 }
 
-// userHandler yapısı
+// userHandler struct
 type userHandler struct {
-	repo *repository.MongoUserRepository
+	repo *mongo.MongoUserRepository
 }
 
-// NewUserHandler, userHandler'ın bir örneğini döner
-func NewUserHandler(repo *repository.MongoUserRepository) UserHandler {
+// NewUserHandler returns a new instance of userHandler
+func NewUserHandler(repo *mongo.MongoUserRepository) UserHandler {
 	return &userHandler{
 		repo: repo,
 	}
 }
 
-// GetUsers tüm kullanıcıları döndürür
+// GetUsers returns all users
 func (h *userHandler) GetUsers(c *gin.Context) {
-
 	users, err := h.repo.GetUsers(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -39,22 +38,20 @@ func (h *userHandler) GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// GetUserByID, ID'ye göre bir kullanıcı döner
+// GetUserByID returns a user by ID
 func (h *userHandler) GetUserByID(c *gin.Context) {
 	id := c.Param("id")
 	user, err := h.repo.GetUserByID(c, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
-
 		return
 	}
 	c.JSON(http.StatusOK, user)
-	return
 }
 
-// CreateUser yeni bir kullanıcı oluşturur
+// CreateUser creates a new user
 func (h *userHandler) CreateUser(c *gin.Context) {
-	var newUser repository.User
+	var newUser mongo.User
 
 	if err := c.BindJSON(&newUser); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -67,13 +64,13 @@ func (h *userHandler) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, nil)
+	c.JSON(http.StatusCreated, newUser)
 }
 
-// UpdateUser, mevcut kullanıcıyı günceller
+// UpdateUser updates an existing user
 func (h *userHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
-	var updatedUser repository.User
+	var updatedUser mongo.User
 
 	if err := c.BindJSON(&updatedUser); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -84,7 +81,7 @@ func (h *userHandler) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+	c.JSON(http.StatusOK, updatedUser)
 }
 
 // DeleteUser implements UserHandler
