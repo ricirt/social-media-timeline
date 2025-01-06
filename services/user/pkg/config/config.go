@@ -15,8 +15,12 @@ type Config struct {
 		} `json:"Collections"`
 	} `json:"MongoDB"`
 	PostgreSQL struct {
-		ConnectionString string `json:"ConnectionString"`
-	} `json:"PostgreSQL"`
+		Host     string `json:"host"`
+		Port     int    `json:"port"`
+		User     string `json:"user"`
+		Password string `json:"password"`
+		DBName   string `json:"dbname"`
+	} `json:"postgres"`
 	Server struct {
 		Port string `json:"Port"`
 	} `json:"Server"`
@@ -45,9 +49,6 @@ func LoadConfig() (*Config, error) {
 	// Environment variables override config file
 	if mongoURI := os.Getenv("MONGODB_URI"); mongoURI != "" {
 		config.MongoDB.ConnectionString = mongoURI
-	}
-	if postgresURI := os.Getenv("POSTGRES_URI"); postgresURI != "" {
-		config.PostgreSQL.ConnectionString = postgresURI
 	}
 
 	return &config, nil

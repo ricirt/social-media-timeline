@@ -17,7 +17,7 @@ type Config struct {
 	DBName   string
 }
 
-func Init(cfg Config) error {
+func InitPostgresClient(cfg Config) error {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName)
 
@@ -34,7 +34,7 @@ func Init(cfg Config) error {
 	return nil
 }
 
-func GetClient() *sql.DB {
+func GetPostgresClient() *sql.DB {
 	return db
 }
 
