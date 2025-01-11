@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/ricirt/social-media-timeline/services/user/internal/model"
-	pkgErrors "github.com/ricirt/social-media-timeline/services/user/pkg/errors"
+	pkgErrors "github.com/ricirt/social-media-timeline/services/pkg/errors"
 )
 
 // UserRepository defines the interface for user repository operations

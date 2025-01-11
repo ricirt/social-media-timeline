@@ -1,7 +1,7 @@
 package model
 
 import (
-	pkgErrors "github.com/ricirt/social-media-timeline/services/user/pkg/errors"
+	pkgErrors "github.com/ricirt/social-media-timeline/services/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 

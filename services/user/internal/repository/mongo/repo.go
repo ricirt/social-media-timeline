@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ricirt/social-media-timeline/services/user/internal/model"
-	pkgErrors "github.com/ricirt/social-media-timeline/services/user/pkg/errors"
+	pkgErrors "github.com/ricirt/social-media-timeline/services/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

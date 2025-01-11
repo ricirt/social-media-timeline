@@ -2,14 +2,13 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/ricirt/social-media-timeline/services/pkg/config"
+	"github.com/ricirt/social-media-timeline/services/pkg/postgres"
 	"github.com/ricirt/social-media-timeline/services/user/internal/handler"
 	"github.com/ricirt/social-media-timeline/services/user/internal/repository"
-	"github.com/ricirt/social-media-timeline/services/user/pkg/config"
 
 	//mongodb "github.com/ricirt/social-media-timeline/services/user/pkg/mongo-db"
 	"log"
-
-	"github.com/ricirt/social-media-timeline/services/user/pkg/postgres"
 )
 
 func main() {
@@ -51,13 +50,17 @@ func main() {
 	h := handler.NewUserHandler(userRepository)
 	r := gin.Default()
 
-	// Define routes for user endpoints
-	r.GET("/users", h.GetUsers)          // List all users
-	r.GET("/users/:id", h.GetUserByID)   // Get user by ID
-	r.POST("/users", h.CreateUser)       // Create new user
-	r.PUT("/users/:id", h.UpdateUser)    // Update existing user
-	r.DELETE("/users/:id", h.DeleteUser) // Delete user
+	v1 := r.Group("/api/v1")
+	{
+		users := v1.Group("/users")
+		{
+			users.POST("", h.CreateUser)
+			users.GET("", h.GetUsers)
+			users.GET("/:id", h.GetUserByID)
+			users.PUT("/:id", h.UpdateUser)
+			users.DELETE("/:id", h.DeleteUser)
+		}
+	}
 
-	// Start the server
 	r.Run(":" + config.Server.Port)
 }

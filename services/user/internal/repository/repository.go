@@ -7,10 +7,10 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 
+	pkgErrors "github.com/ricirt/social-media-timeline/services/pkg/errors"
 	"github.com/ricirt/social-media-timeline/services/user/internal/model"
 	mongoRepo "github.com/ricirt/social-media-timeline/services/user/internal/repository/mongo"
 	pgRepo "github.com/ricirt/social-media-timeline/services/user/internal/repository/postgres"
-	pkgErrors "github.com/ricirt/social-media-timeline/services/user/pkg/errors"
 )
 
 // UserRepository defines the interface for user repository operations

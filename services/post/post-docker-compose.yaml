@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  post_api:
+    container_name: post_api
+    build:
+      context: ../..
+      dockerfile: services/post/Dockerfile
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./config:/app/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+
+  mongodb:
+    container_name: mongodb_post
+    image: mongo:latest
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_post_data:/data/db
+
+  postgres:
+    container_name: postgres_post
+    image: postgres:latest
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: timeline
+    volumes:
+      - postgres_post_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+
+volumes:
+  mongodb_post_data:
+  postgres_post_data: 
