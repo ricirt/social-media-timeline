@@ -20,7 +20,7 @@ func main() {
 		Host:     config.PostgreSQL.Host,
 		Port:     config.PostgreSQL.Port,
 		User:     config.PostgreSQL.User,
-		Password: config.PostgreSQL.Password,
+		Password: config.PostgreSQL.Password, 
 		DBName:   config.PostgreSQL.DBName,
 	}
 
