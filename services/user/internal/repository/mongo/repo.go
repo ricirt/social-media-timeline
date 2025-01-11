@@ -3,9 +3,11 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/ricirt/social-media-timeline/services/user/internal/model"
+	"github.com/google/uuid"
 	pkgErrors "github.com/ricirt/social-media-timeline/services/pkg/errors"
+	"github.com/ricirt/social-media-timeline/services/user/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -58,37 +60,27 @@ func NewMongoUserRepository(client *mongo.Client, dbName, collectionName string)
 
 // CreateUser creates a new user in the database
 func (r *MongoUserRepository) CreateUser(ctx context.Context, user *model.User) error {
-	result, err := r.collection.InsertOne(ctx, user)
+	// UUID oluştur
+	user.ID = uuid.New().String()
+	user.CreatedAt = time.Now()
+
+	_, err := r.collection.InsertOne(ctx, user)
 	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return pkgErrors.ErrDuplicateEmail
-		}
 		return fmt.Errorf("failed to create user: %w", err)
 	}
-
-	if oid, ok := result.InsertedID.(primitive.ObjectID); ok {
-		user.ID = oid
-	}
-
 	return nil
 }
 
 // GetUserByID retrieves a user by their ID
 func (r *MongoUserRepository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, pkgErrors.ErrInvalidID
-	}
-
 	var user model.User
-	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
+	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
+	if err == mongo.ErrNoDocuments {
+		return nil, pkgErrors.ErrUserNotFound
+	}
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, pkgErrors.ErrUserNotFound
-		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
-
 	return &user, nil
 }
 

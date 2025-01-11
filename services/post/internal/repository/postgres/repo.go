@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"time"
 
 	pkgErrors "github.com/ricirt/social-media-timeline/services/pkg/errors"
 	"github.com/ricirt/social-media-timeline/services/post/internal/model"
@@ -23,11 +24,11 @@ func NewPostgresPostRepository(db *sql.DB) (*PostgresPostRepository, error) {
 
 func (r *PostgresPostRepository) CreatePost(ctx context.Context, post *model.Post) error {
 	query := `
-        INSERT INTO posts (user_id, content)
-        VALUES ($1, $2)
+        INSERT INTO posts (user_id, content, created_at)
+        VALUES ($1, $2, $3)
         RETURNING id`
 
-	err := r.db.QueryRowContext(ctx, query, post.UserID, post.Content).Scan(&post.ID)
+	err := r.db.QueryRowContext(ctx, query, post.UserID, post.Content, time.Now()).Scan(&post.ID)
 	if err != nil {
 		return fmt.Errorf("failed to create post: %w", err)
 	}
@@ -35,18 +36,13 @@ func (r *PostgresPostRepository) CreatePost(ctx context.Context, post *model.Pos
 }
 
 func (r *PostgresPostRepository) GetPostByID(ctx context.Context, id string) (*model.Post, error) {
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return nil, pkgErrors.ErrInvalidID
-	}
-
 	query := `
-        SELECT id, user_id, content
+        SELECT id, user_id, content, created_at
         FROM posts
         WHERE id = $1`
 
 	post := &model.Post{}
-	err = r.db.QueryRowContext(ctx, query, idInt).Scan(&post.ID, &post.UserID, &post.Content)
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&post.ID, &post.UserID, &post.Content, &post.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, pkgErrors.ErrPostNotFound
 	}
@@ -80,7 +76,7 @@ func (r *PostgresPostRepository) GetPosts(ctx context.Context) ([]model.Post, er
 
 func (r *PostgresPostRepository) GetPostsByUserID(ctx context.Context, userID string) ([]model.Post, error) {
 	query := `
-        SELECT id, user_id, content
+        SELECT id, user_id, content, created_at
         FROM posts
         WHERE user_id = $1`
 
@@ -93,7 +89,7 @@ func (r *PostgresPostRepository) GetPostsByUserID(ctx context.Context, userID st
 	var posts []model.Post
 	for rows.Next() {
 		var post model.Post
-		if err := rows.Scan(&post.ID, &post.UserID, &post.Content); err != nil {
+		if err := rows.Scan(&post.ID, &post.UserID, &post.Content, &post.CreatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan post: %w", err)
 		}
 		posts = append(posts, post)

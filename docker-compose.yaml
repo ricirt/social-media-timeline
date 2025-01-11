@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  user_api:
+    container_name: user_api
+    build:
+      context: .
+      dockerfile: services/user/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./services/user/config:/app/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+
+  post_api:
+    container_name: post_api
+    build:
+      context: .
+      dockerfile: services/post/Dockerfile
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./services/post/config:/app/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: timeline
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./services/user/migrations:/docker-entrypoint-initdb.d/user
+      - ./services/post/migrations:/docker-entrypoint-initdb.d/post
+
+volumes:
+  mongodb_data:
+  postgres_data: 

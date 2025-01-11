@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"time"
 
-	"github.com/ricirt/social-media-timeline/services/user/internal/model"
 	pkgErrors "github.com/ricirt/social-media-timeline/services/pkg/errors"
+	"github.com/ricirt/social-media-timeline/services/user/internal/model"
 )
 
 // UserRepository defines the interface for user repository operations
@@ -38,11 +39,11 @@ func NewPostgresUserRepository(db *sql.DB) (*PostgresUserRepository, error) {
 // CreateUser creates a new user
 func (r *PostgresUserRepository) CreateUser(ctx context.Context, user *model.User) error {
 	query := `
-		INSERT INTO users (name, email)
-		VALUES ($1, $2)
+		INSERT INTO users (name, email, created_at)
+		VALUES ($1, $2, $3)
 		RETURNING id`
 
-	err := r.db.QueryRowContext(ctx, query, user.Name, user.Email).Scan(&user.ID)
+	err := r.db.QueryRowContext(ctx, query, user.Name, user.Email, time.Now()).Scan(&user.ID)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
@@ -52,18 +53,13 @@ func (r *PostgresUserRepository) CreateUser(ctx context.Context, user *model.Use
 
 // GetUserByID retrieves a user by ID
 func (r *PostgresUserRepository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return nil, fmt.Errorf("invalid id: %w", err)
-	}
-
-	user := &model.User{}
 	query := `
-		SELECT id, name, email
+		SELECT id, name, email, created_at
 		FROM users
 		WHERE id = $1`
 
-	err = r.db.QueryRowContext(ctx, query, idInt).Scan(&user.ID, &user.Name, &user.Email)
+	user := &model.User{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, pkgErrors.ErrUserNotFound
 	}

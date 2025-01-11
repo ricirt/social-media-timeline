@@ -3,7 +3,9 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
 	pkgErrors "github.com/ricirt/social-media-timeline/services/pkg/errors"
 	"github.com/ricirt/social-media-timeline/services/post/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,22 +27,19 @@ func NewMongoPostRepository(client *mongo.Client, dbName, collectionName string)
 }
 
 func (r *MongoPostRepository) CreatePost(ctx context.Context, post *model.Post) error {
-	result, err := r.collection.InsertOne(ctx, post.MongoPost())
+	post.ID = uuid.New().String()
+	post.CreatedAt = time.Now()
+
+	_, err := r.collection.InsertOne(ctx, post)
 	if err != nil {
 		return fmt.Errorf("failed to create post: %w", err)
 	}
-	post.ID = result.InsertedID
 	return nil
 }
 
 func (r *MongoPostRepository) GetPostByID(ctx context.Context, id string) (*model.Post, error) {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, pkgErrors.ErrInvalidID
-	}
-
 	var post model.Post
-	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&post)
+	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&post)
 	if err == mongo.ErrNoDocuments {
 		return nil, pkgErrors.ErrPostNotFound
 	}
